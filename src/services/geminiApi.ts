@@ -1,4 +1,3 @@
-
 interface GeminiResponse {
   candidates: {
     content: {
@@ -16,7 +15,7 @@ class GeminiService {
   constructor() {
     // In a real app, this would come from environment variables
     // For demo purposes, we'll use a placeholder
-    this.apiKey = process.env.REACT_APP_GEMINI_API_KEY || 'demo-key';
+    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'demo-key';
   }
 
   async generateResponse(prompt: string, context?: any): Promise<string> {
