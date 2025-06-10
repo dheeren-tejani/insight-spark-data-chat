@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
@@ -9,8 +8,10 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ComposedChart
 } from 'recharts';
-import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Activity, BarChart3, Scatter3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import ChartSelector from './ChartSelector';
+import AdvancedChartsView from './AdvancedChartsView';
 
 const DashboardView: React.FC = () => {
   const { currentDataset } = useAppStore();
@@ -142,295 +143,315 @@ const DashboardView: React.FC = () => {
         })}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Line Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Trend Analysis</h3>
-          <div className="space-y-2">
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={lineChartColumns.primary}
-              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
-              label="Primary"
-            />
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={lineChartColumns.secondary}
-              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, secondary: col }))}
-              label="Secondary"
-            />
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-              <Legend />
-              {lineChartColumns.primary && (
-                <Line 
-                  type="monotone" 
-                  dataKey={lineChartColumns.primary} 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-                />
-              )}
-              {lineChartColumns.secondary && (
-                <Line 
-                  type="monotone" 
-                  dataKey={lineChartColumns.secondary} 
-                  stroke="hsl(var(--secondary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2 }}
-                />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
+      {/* Dashboard Tabs */}
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="basic" className="flex items-center space-x-2">
+            <BarChart3 className="w-4 h-4" />
+            <span>Basic Charts</span>
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="flex items-center space-x-2">
+            <Scatter3 className="w-4 h-4" />
+            <span>Advanced Charts</span>
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Bar Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Distribution Analysis</h3>
-          <div className="space-y-2">
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={barChartColumns.primary}
-              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
-              label="Primary"
-            />
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={barChartColumns.secondary}
-              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, secondary: col }))}
-              label="Secondary"
-            />
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-              <Legend />
-              {barChartColumns.primary && (
-                <Bar dataKey={barChartColumns.primary} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              )}
-              {barChartColumns.secondary && (
-                <Bar dataKey={barChartColumns.secondary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
-              )}
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Area Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Area Trend</h3>
-          <ChartSelector
-            columns={numericColumns}
-            selectedColumn={areaChartColumn}
-            onColumnChange={setAreaChartColumn}
-            label="Column"
-          />
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-              {areaChartColumn && (
-                <Area 
-                  type="monotone" 
-                  dataKey={areaChartColumn} 
-                  stroke="hsl(var(--primary))" 
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.3}
-                />
-              )}
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Scatter Plot */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Correlation Analysis</h3>
-          <div className="space-y-2">
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={scatterChartColumns.x}
-              onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, x: col }))}
-              label="X-Axis"
-            />
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={scatterChartColumns.y}
-              onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, y: col }))}
-              label="Y-Axis"
-            />
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <ScatterChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey={scatterChartColumns.x} stroke="hsl(var(--muted-foreground))" />
-              <YAxis dataKey={scatterChartColumns.y} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-              {scatterChartColumns.x && scatterChartColumns.y && (
-                <Scatter dataKey={scatterChartColumns.y} fill="hsl(var(--primary))" />
-              )}
-            </ScatterChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Composed Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Combined Analysis</h3>
-          <div className="space-y-2">
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={lineChartColumns.primary}
-              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
-              label="Line Data"
-            />
-            <ChartSelector
-              columns={numericColumns}
-              selectedColumn={barChartColumns.primary}
-              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
-              label="Bar Data"
-            />
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-              <Legend />
-              {barChartColumns.primary && (
-                <Bar dataKey={barChartColumns.primary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
-              )}
-              {lineChartColumns.primary && (
-                <Line 
-                  type="monotone" 
-                  dataKey={lineChartColumns.primary} 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                />
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Pie Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="bg-card rounded-lg p-6 border border-border"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Data Quality Breakdown</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={[
-                  { name: 'Complete Data', value: currentDataset.dataQuality },
-                  { name: 'Missing Data', value: 100 - currentDataset.dataQuality }
-                ]}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                dataKey="value"
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-              >
-                <Cell fill="hsl(var(--primary))" />
-                <Cell fill="hsl(var(--destructive))" />
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }} 
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
-
-      {/* Detected Features */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="bg-card rounded-lg p-6 border border-border"
-      >
-        <h3 className="text-lg font-semibold text-foreground mb-4">Detected Features</h3>
-        <div className="flex flex-wrap gap-2">
-          {currentDataset.detectedFeatures.map((feature, index) => (
-            <span 
-              key={index}
-              className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30"
+        <TabsContent value="basic" className="space-y-6">
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Line Chart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-card rounded-lg p-6 border border-border"
             >
-              {feature}
-            </span>
-          ))}
-        </div>
-      </motion.div>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Trend Analysis</h3>
+              <div className="space-y-2">
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={lineChartColumns.primary}
+                  onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
+                  label="Primary"
+                />
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={lineChartColumns.secondary}
+                  onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, secondary: col }))}
+                  label="Secondary"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Legend />
+                  {lineChartColumns.primary && (
+                    <Line 
+                      type="monotone" 
+                      dataKey={lineChartColumns.primary} 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                    />
+                  )}
+                  {lineChartColumns.secondary && (
+                    <Line 
+                      type="monotone" 
+                      dataKey={lineChartColumns.secondary} 
+                      stroke="hsl(var(--secondary))" 
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2 }}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Bar Chart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="bg-card rounded-lg p-6 border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">Distribution Analysis</h3>
+              <div className="space-y-2">
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={barChartColumns.primary}
+                  onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
+                  label="Primary"
+                />
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={barChartColumns.secondary}
+                  onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, secondary: col }))}
+                  label="Secondary"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Legend />
+                  {barChartColumns.primary && (
+                    <Bar dataKey={barChartColumns.primary} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  )}
+                  {barChartColumns.secondary && (
+                    <Bar dataKey={barChartColumns.secondary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Area Chart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="bg-card rounded-lg p-6 border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">Area Trend</h3>
+              <ChartSelector
+                columns={numericColumns}
+                selectedColumn={areaChartColumn}
+                onColumnChange={setAreaChartColumn}
+                label="Column"
+              />
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  {areaChartColumn && (
+                    <Area 
+                      type="monotone" 
+                      dataKey={areaChartColumn} 
+                      stroke="hsl(var(--primary))" 
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.3}
+                    />
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Scatter Plot */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-card rounded-lg p-6 border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">Correlation Analysis</h3>
+              <div className="space-y-2">
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={scatterChartColumns.x}
+                  onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, x: col }))}
+                  label="X-Axis"
+                />
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={scatterChartColumns.y}
+                  onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, y: col }))}
+                  label="Y-Axis"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey={scatterChartColumns.x} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis dataKey={scatterChartColumns.y} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  {scatterChartColumns.x && scatterChartColumns.y && (
+                    <Scatter dataKey={scatterChartColumns.y} fill="hsl(var(--primary))" />
+                  )}
+                </ScatterChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Composed Chart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6 }}
+              className="bg-card rounded-lg p-6 border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">Combined Analysis</h3>
+              <div className="space-y-2">
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={lineChartColumns.primary}
+                  onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
+                  label="Line Data"
+                />
+                <ChartSelector
+                  columns={numericColumns}
+                  selectedColumn={barChartColumns.primary}
+                  onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
+                  label="Bar Data"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Legend />
+                  {barChartColumns.primary && (
+                    <Bar dataKey={barChartColumns.primary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+                  )}
+                  {lineChartColumns.primary && (
+                    <Line 
+                      type="monotone" 
+                      dataKey={lineChartColumns.primary} 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                    />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Pie Chart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.7 }}
+              className="bg-card rounded-lg p-6 border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">Data Quality Breakdown</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Complete Data', value: currentDataset.dataQuality },
+                      { name: 'Missing Data', value: 100 - currentDataset.dataQuality }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    <Cell fill="hsl(var(--primary))" />
+                    <Cell fill="hsl(var(--destructive))" />
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </motion.div>
+          </div>
+
+          {/* Detected Features */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-card rounded-lg p-6 border border-border"
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Detected Features</h3>
+            <div className="flex flex-wrap gap-2">
+              {currentDataset.detectedFeatures.map((feature, index) => (
+                <span 
+                  key={index}
+                  className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30"
+                >
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="advanced">
+          <AdvancedChartsView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
