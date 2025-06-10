@@ -29,7 +29,7 @@ interface CandlestickConfig {
 
 interface CandlestickProps {
   data: CandlestickData[];
-  config: CandlestickConfig;
+  config?: Partial<CandlestickConfig>;
   theme?: any;
   animation?: any;
   interaction?: any;
@@ -102,40 +102,7 @@ const CandlestickBar = ({ x, y, width, height, payload, config }: any) => {
   );
 };
 
-export const CandlestickChart: React.FC<CandlestickProps> = ({ data, config, theme, animation }) => {
-  const processedData = useMemo(() => {
-    const closePrices = data.map(d => d.close);
-    
-    let processedData = data.map((item, index) => ({
-      ...item,
-      dateStr: item.date.toLocaleDateString(),
-      index,
-    }));
-
-    // Add technical indicators
-    if (config.indicators.sma) {
-      config.indicators.sma.forEach((sma, i) => {
-        const smaValues = calculateSMA(closePrices, sma.period);
-        processedData = processedData.map((item, index) => ({
-          ...item,
-          [`sma${sma.period}`]: smaValues[index],
-        }));
-      });
-    }
-
-    if (config.indicators.ema) {
-      config.indicators.ema.forEach((ema, i) => {
-        const emaValues = calculateEMA(closePrices, ema.period);
-        processedData = processedData.map((item, index) => ({
-          ...item,
-          [`ema${ema.period}`]: emaValues[index],
-        }));
-      });
-    }
-
-    return processedData;
-  }, [data, config.indicators]);
-
+export const CandlestickChart: React.FC<CandlestickProps> = ({ data, config = {}, theme, animation }) => {
   const defaultConfig: CandlestickConfig = {
     showVolume: true,
     indicators: {},
@@ -148,8 +115,56 @@ export const CandlestickChart: React.FC<CandlestickProps> = ({ data, config, the
         down: 'hsl(var(--destructive))',
       },
     },
-    ...config,
   };
+
+  const mergedConfig: CandlestickConfig = {
+    showVolume: config.showVolume ?? defaultConfig.showVolume,
+    indicators: { ...defaultConfig.indicators, ...config.indicators },
+    colors: { ...defaultConfig.colors, ...config.colors },
+  };
+
+  const processedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
+    const closePrices = data.map(d => d.close);
+    
+    let processedData = data.map((item, index) => ({
+      ...item,
+      dateStr: item.date.toLocaleDateString(),
+      index,
+    }));
+
+    // Add technical indicators
+    if (mergedConfig.indicators.sma) {
+      mergedConfig.indicators.sma.forEach((sma, i) => {
+        const smaValues = calculateSMA(closePrices, sma.period);
+        processedData = processedData.map((item, index) => ({
+          ...item,
+          [`sma${sma.period}`]: smaValues[index],
+        }));
+      });
+    }
+
+    if (mergedConfig.indicators.ema) {
+      mergedConfig.indicators.ema.forEach((ema, i) => {
+        const emaValues = calculateEMA(closePrices, ema.period);
+        processedData = processedData.map((item, index) => ({
+          ...item,
+          [`ema${ema.period}`]: emaValues[index],
+        }));
+      });
+    }
+
+    return processedData;
+  }, [data, mergedConfig.indicators]);
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <p className="text-muted-foreground">No candlestick data available</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -194,7 +209,7 @@ export const CandlestickChart: React.FC<CandlestickProps> = ({ data, config, the
           <Legend />
           
           {/* Moving Averages */}
-          {config.indicators.sma?.map((sma, index) => (
+          {mergedConfig.indicators.sma?.map((sma, index) => (
             <Line
               key={`sma-${sma.period}`}
               type="monotone"
@@ -207,7 +222,7 @@ export const CandlestickChart: React.FC<CandlestickProps> = ({ data, config, the
             />
           ))}
           
-          {config.indicators.ema?.map((ema, index) => (
+          {mergedConfig.indicators.ema?.map((ema, index) => (
             <Line
               key={`ema-${ema.period}`}
               type="monotone"

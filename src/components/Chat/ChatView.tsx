@@ -3,7 +3,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { geminiService } from '../../services/geminiApi';
-import { Send, MessageCircle, Bot, User, Sparkles } from 'lucide-react';
+import { Send, MessageCircle, Bot, User, Sparkles, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { MessageRenderer } from './MessageRenderer';
+import { Button } from '../ui/button';
 
 const ChatView: React.FC = () => {
   const { currentDataset, chatMessages, addChatMessage, isChatLoading, setChatLoading } = useAppStore();
@@ -66,56 +68,80 @@ const ChatView: React.FC = () => {
 
   const quickActions = [
     "Summarize this data",
-    "Find correlations",
+    "Find correlations", 
     "Detect outliers",
     "Show trends",
     "Compare segments"
   ];
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   if (!currentDataset) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No Dataset Selected</h3>
-          <p className="text-gray-400">Select a dataset to start chatting with AI about your data</p>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <MessageCircle className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-3">No Dataset Selected</h3>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Select a dataset from the sidebar to start chatting with AI about your data insights and analysis.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
-      {/* Header */}
-      <div className="border-b border-[#2a2a2a] pb-4 mb-4">
-        <h1 className="text-2xl font-bold text-white mb-2">Chat with AI</h1>
-        <p className="text-gray-400">
-          Ask questions about <span className="text-[#00d4ff]">{currentDataset.name}</span>
-        </p>
+    <div className="flex flex-col h-full max-h-[calc(100vh-120px)]">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-card via-card to-card/80 border-b border-border/50 p-6 rounded-t-lg">
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+            <Bot className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Chat with AI</h1>
+            <p className="text-muted-foreground">
+              Analyzing <span className="text-primary font-medium">{currentDataset.name}</span> • 
+              <span className="text-secondary ml-1">{currentDataset.rows.toLocaleString()} rows</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-background/50">
         {chatMessages.length === 0 && (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#00d4ff] to-[#7c3aed] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bot className="w-8 h-8 text-white" />
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Ask me anything about your data!</h3>
-            <p className="text-gray-400 mb-6">I can help you analyze patterns, find insights, and answer questions</p>
+            <h3 className="text-xl font-semibold text-foreground mb-3">Ask me anything about your data!</h3>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
+              I can help you analyze patterns, find insights, generate visualizations, and answer questions about your dataset.
+            </p>
             
-            {/* Quick Actions */}
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500 mb-3">Quick actions:</p>
-              <div className="flex flex-wrap gap-2 justify-center">
+            {/* Enhanced Quick Actions */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground mb-4">Quick suggestions:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto">
                 {quickActions.map((action, index) => (
-                  <button
+                  <Button
                     key={index}
+                    variant="outline"
                     onClick={() => setInputValue(action)}
-                    className="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm text-gray-300 hover:border-[#00d4ff]/50 hover:text-white transition-colors"
+                    className="h-auto p-4 text-left justify-start hover:bg-primary/5 hover:border-primary/20 transition-all duration-200"
                   >
-                    {action}
-                  </button>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <span className="text-sm">{action}</span>
+                    </div>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -131,31 +157,71 @@ const ChatView: React.FC = () => {
               exit={{ opacity: 0, y: -20 }}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`flex items-start space-x-3 max-w-[80%] ${
+              <div className={`flex items-start space-x-4 max-w-[85%] ${
                 message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
               }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                {/* Avatar */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   message.type === 'user' 
-                    ? 'bg-gradient-to-br from-[#00d4ff] to-[#7c3aed]'
-                    : 'bg-[#2a2a2a]'
+                    ? 'bg-gradient-to-br from-primary to-secondary'
+                    : 'bg-gradient-to-br from-muted to-muted/50 border border-border/50'
                 }`}>
                   {message.type === 'user' ? (
-                    <User className="w-4 h-4 text-white" />
+                    <User className="w-5 h-5 text-white" />
                   ) : (
-                    <Bot className="w-4 h-4 text-[#00d4ff]" />
+                    <Bot className="w-5 h-5 text-primary" />
                   )}
                 </div>
-                <div className={`rounded-lg p-4 ${
+
+                {/* Message Content */}
+                <div className={`rounded-2xl p-4 ${
                   message.type === 'user'
-                    ? 'bg-gradient-to-br from-[#00d4ff] to-[#7c3aed] text-white'
-                    : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-300'
+                    ? 'bg-gradient-to-br from-primary to-secondary text-white'
+                    : 'bg-card border border-border/50 shadow-sm'
                 }`}>
-                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                  <p className={`text-xs mt-2 ${
-                    message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                  {message.type === 'ai' ? (
+                    <MessageRenderer 
+                      content={message.content}
+                      className={message.type === 'user' ? 'text-white' : 'text-foreground'}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
+                    <p className={`text-xs ${
+                      message.type === 'user' ? 'text-white/70' : 'text-muted-foreground'
+                    }`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                    
+                    {message.type === 'ai' && (
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(message.content)}
+                          className="h-6 w-6 p-0 hover:bg-muted/50"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-muted/50"
+                        >
+                          <ThumbsUp className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-muted/50"
+                        >
+                          <ThumbsDown className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -168,20 +234,32 @@ const ChatView: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-start"
           >
-            <div className="flex items-start space-x-3 max-w-[80%]">
-              <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+            <div className="flex items-start space-x-4 max-w-[85%]">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-muted to-muted/50 border border-border/50 flex items-center justify-center">
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 >
-                  <Sparkles className="w-4 h-4 text-[#00d4ff]" />
+                  <Sparkles className="w-5 h-5 text-primary" />
                 </motion.div>
               </div>
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
+              <div className="bg-card border border-border/50 rounded-2xl p-4">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-[#00d4ff] rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-[#00d4ff] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-[#00d4ff] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <motion.div 
+                    className="w-2 h-2 bg-primary rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.div 
+                    className="w-2 h-2 bg-primary rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
+                  />
+                  <motion.div 
+                    className="w-2 h-2 bg-primary rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
+                  />
                 </div>
               </div>
             </div>
@@ -191,9 +269,9 @@ const ChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-[#2a2a2a] pt-4">
-        <div className="flex space-x-3">
+      {/* Enhanced Input Area */}
+      <div className="bg-card border-t border-border/50 p-6">
+        <div className="flex items-end space-x-4">
           <div className="flex-1 relative">
             <textarea
               value={inputValue}
@@ -201,17 +279,17 @@ const ChatView: React.FC = () => {
               onKeyPress={handleKeyPress}
               placeholder="Ask me anything about your data..."
               rows={1}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#00d4ff]/50 resize-none"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 resize-none transition-all duration-200"
               style={{ minHeight: '48px', maxHeight: '120px' }}
             />
           </div>
-          <button
+          <Button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isChatLoading}
-            className="px-4 py-3 bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-12 w-12 rounded-xl bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

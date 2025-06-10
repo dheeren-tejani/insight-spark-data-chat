@@ -43,7 +43,7 @@ interface NetworkProps {
     nodes: NetworkNode[];
     links: NetworkLink[];
   };
-  config: NetworkConfig;
+  config?: Partial<NetworkConfig>;
   theme?: any;
   animation?: any;
   interaction?: any;
@@ -121,26 +121,9 @@ const forceSimulation = (nodes: NetworkNode[], links: NetworkLink[], config: Net
   return { nodes: processedNodes, links: processedLinks };
 };
 
-export const NetworkChart: React.FC<NetworkProps> = ({ data, config, theme, animation }) => {
+export const NetworkChart: React.FC<NetworkProps> = ({ data, config = {}, theme, animation }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = React.useState({ width: 800, height: 600 });
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (svgRef.current) {
-        const rect = svgRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
-      }
-    };
-
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
-
-  const simulationData = useMemo(() => {
-    return forceSimulation(data.nodes, data.links, config, dimensions.width, dimensions.height);
-  }, [data, config, dimensions]);
 
   const defaultConfig: NetworkConfig = {
     forces: {
@@ -159,8 +142,41 @@ export const NetworkChart: React.FC<NetworkProps> = ({ data, config, theme, anim
     },
     showLabels: true,
     clustering: false,
-    ...config,
   };
+
+  const mergedConfig: NetworkConfig = {
+    forces: { ...defaultConfig.forces, ...config.forces },
+    nodeSize: { ...defaultConfig.nodeSize, ...config.nodeSize },
+    colors: { ...defaultConfig.colors, ...config.colors },
+    showLabels: config.showLabels ?? defaultConfig.showLabels,
+    clustering: config.clustering ?? defaultConfig.clustering,
+  };
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (svgRef.current) {
+        const rect = svgRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  const simulationData = useMemo(() => {
+    if (!data || !data.nodes || !data.links) return { nodes: [], links: [] };
+    return forceSimulation(data.nodes, data.links, mergedConfig, dimensions.width, dimensions.height);
+  }, [data, mergedConfig, dimensions]);
+
+  if (!data || !data.nodes || !data.links) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <p className="text-muted-foreground">No network data available</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -179,7 +195,7 @@ export const NetworkChart: React.FC<NetworkProps> = ({ data, config, theme, anim
               y1={link.sourceNode.y}
               x2={link.targetNode.x}
               y2={link.targetNode.y}
-              stroke={link.color || defaultConfig.colors.links}
+              stroke={link.color || mergedConfig.colors.links}
               strokeWidth={link.weight ? Math.sqrt(link.weight) : 1}
               strokeOpacity={0.6}
             />
@@ -188,8 +204,8 @@ export const NetworkChart: React.FC<NetworkProps> = ({ data, config, theme, anim
         
         {/* Nodes */}
         {simulationData.nodes.map((node, index) => {
-          const nodeSize = node.size || defaultConfig.nodeSize.min;
-          const nodeColor = node.color || defaultConfig.colors.nodes[index % defaultConfig.colors.nodes.length];
+          const nodeSize = node.size || mergedConfig.nodeSize.min;
+          const nodeColor = node.color || mergedConfig.colors.nodes[index % mergedConfig.colors.nodes.length];
           
           return (
             <g key={`node-${node.id}`}>
@@ -203,7 +219,7 @@ export const NetworkChart: React.FC<NetworkProps> = ({ data, config, theme, anim
                 className="cursor-pointer hover:opacity-80"
               />
               
-              {defaultConfig.showLabels && (
+              {mergedConfig.showLabels && (
                 <text
                   x={node.x}
                   y={node.y! + nodeSize + 15}
