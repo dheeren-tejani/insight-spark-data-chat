@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
@@ -8,7 +9,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ComposedChart
 } from 'recharts';
-import { TrendingUp, Users, DollarSign, Activity, BarChart3, Scatter as ScatterIcon } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Activity, BarChart3, ScatterChart as ScatterIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import ChartSelector from './ChartSelector';
 import AdvancedChartsView from './AdvancedChartsView';
