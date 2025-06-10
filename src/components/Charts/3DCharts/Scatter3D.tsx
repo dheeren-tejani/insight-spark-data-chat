@@ -32,7 +32,7 @@ interface Scatter3DConfig {
 
 interface Scatter3DProps {
   data: Scatter3DData[];
-  config: Scatter3DConfig;
+  config: Partial<Scatter3DConfig>;
   theme?: any;
   animation?: any;
   interaction?: any;
@@ -77,8 +77,44 @@ const project3DTo2D = (
   };
 };
 
-export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, animation }) => {
-  const [rotation, setRotation] = React.useState(config.camera.rotation);
+export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config = {}, theme, animation }) => {
+  // Create default configuration
+  const defaultConfig: Scatter3DConfig = {
+    axes: {
+      x: { label: 'X Axis', scale: 'linear' },
+      y: { label: 'Y Axis', scale: 'linear' },
+      z: { label: 'Z Axis', scale: 'linear' },
+    },
+    camera: {
+      distance: 500,
+      rotation: { x: 15, y: 30, z: 0 },
+    },
+    colors: {
+      points: 'hsl(var(--primary))',
+      axes: 'hsl(var(--muted-foreground))',
+      grid: 'hsl(var(--border))',
+    },
+    pointSize: 4,
+    showGrid: true,
+  };
+
+  // Merge with user config
+  const mergedConfig: Scatter3DConfig = {
+    axes: { ...defaultConfig.axes, ...config.axes },
+    camera: { 
+      ...defaultConfig.camera, 
+      ...config.camera,
+      rotation: { 
+        ...defaultConfig.camera.rotation, 
+        ...(config.camera?.rotation || {}) 
+      }
+    },
+    colors: { ...defaultConfig.colors, ...config.colors },
+    pointSize: config.pointSize ?? defaultConfig.pointSize,
+    showGrid: config.showGrid ?? defaultConfig.showGrid,
+  };
+
+  const [rotation, setRotation] = React.useState(mergedConfig.camera.rotation);
   const [isDragging, setIsDragging] = React.useState(false);
   const [lastMouse, setLastMouse] = React.useState({ x: 0, y: 0 });
 
@@ -87,10 +123,12 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
   const centerY = dimensions.height / 2;
 
   const projectedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
     return data.map(point => {
       const projected = project3DTo2D(
         point.x, point.y, point.z, 
-        { ...config.camera, rotation }, 
+        { ...mergedConfig.camera, rotation }, 
         centerX, centerY
       );
       
@@ -99,25 +137,25 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
         projected,
       };
     }).sort((a, b) => a.projected.z - b.projected.z); // Sort by depth for proper rendering
-  }, [data, rotation, config.camera, centerX, centerY]);
+  }, [data, rotation, mergedConfig.camera, centerX, centerY]);
 
   const axisLines = useMemo(() => {
     const axisLength = 100;
     const axes = [
-      { start: [-axisLength, 0, 0], end: [axisLength, 0, 0], color: 'red', label: config.axes.x.label },
-      { start: [0, -axisLength, 0], end: [0, axisLength, 0], color: 'green', label: config.axes.y.label },
-      { start: [0, 0, -axisLength], end: [0, 0, axisLength], color: 'blue', label: config.axes.z.label },
+      { start: [-axisLength, 0, 0], end: [axisLength, 0, 0], color: 'red', label: mergedConfig.axes.x.label },
+      { start: [0, -axisLength, 0], end: [0, axisLength, 0], color: 'green', label: mergedConfig.axes.y.label },
+      { start: [0, 0, -axisLength], end: [0, 0, axisLength], color: 'blue', label: mergedConfig.axes.z.label },
     ];
 
     return axes.map(axis => {
       const startProj = project3DTo2D(
         axis.start[0], axis.start[1], axis.start[2],
-        { ...config.camera, rotation },
+        { ...mergedConfig.camera, rotation },
         centerX, centerY
       );
       const endProj = project3DTo2D(
         axis.end[0], axis.end[1], axis.end[2],
-        { ...config.camera, rotation },
+        { ...mergedConfig.camera, rotation },
         centerX, centerY
       );
       
@@ -127,7 +165,7 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
         endProj,
       };
     });
-  }, [rotation, config.camera, config.axes, centerX, centerY]);
+  }, [rotation, mergedConfig.camera, mergedConfig.axes, centerX, centerY]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -153,25 +191,13 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
     setIsDragging(false);
   };
 
-  const defaultConfig: Scatter3DConfig = {
-    axes: {
-      x: { label: 'X Axis', scale: 'linear' },
-      y: { label: 'Y Axis', scale: 'linear' },
-      z: { label: 'Z Axis', scale: 'linear' },
-    },
-    camera: {
-      distance: 500,
-      rotation: { x: 15, y: 30, z: 0 },
-    },
-    colors: {
-      points: 'hsl(var(--primary))',
-      axes: 'hsl(var(--muted-foreground))',
-      grid: 'hsl(var(--border))',
-    },
-    pointSize: 4,
-    showGrid: true,
-    ...config,
-  };
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <p className="text-muted-foreground">No data available for 3D visualization</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -184,6 +210,7 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
         <svg
           width="100%"
           height="100%"
+          viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
           className="cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -191,7 +218,7 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
           onMouseLeave={handleMouseUp}
         >
           {/* Grid lines */}
-          {defaultConfig.showGrid && (
+          {mergedConfig.showGrid && (
             <g opacity={0.3}>
               {Array.from({ length: 21 }, (_, i) => {
                 const coord = (i - 10) * 10;
@@ -199,20 +226,20 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
                   <g key={i}>
                     {/* X grid lines */}
                     <line
-                      x1={project3DTo2D(coord, -100, 0, { ...config.camera, rotation }, centerX, centerY).x}
-                      y1={project3DTo2D(coord, -100, 0, { ...config.camera, rotation }, centerX, centerY).y}
-                      x2={project3DTo2D(coord, 100, 0, { ...config.camera, rotation }, centerX, centerY).x}
-                      y2={project3DTo2D(coord, 100, 0, { ...config.camera, rotation }, centerX, centerY).y}
-                      stroke={defaultConfig.colors.grid}
+                      x1={project3DTo2D(coord, -100, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).x}
+                      y1={project3DTo2D(coord, -100, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).y}
+                      x2={project3DTo2D(coord, 100, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).x}
+                      y2={project3DTo2D(coord, 100, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).y}
+                      stroke={mergedConfig.colors.grid}
                       strokeWidth={0.5}
                     />
                     {/* Y grid lines */}
                     <line
-                      x1={project3DTo2D(-100, coord, 0, { ...config.camera, rotation }, centerX, centerY).x}
-                      y1={project3DTo2D(-100, coord, 0, { ...config.camera, rotation }, centerX, centerY).y}
-                      x2={project3DTo2D(100, coord, 0, { ...config.camera, rotation }, centerX, centerY).x}
-                      y2={project3DTo2D(100, coord, 0, { ...config.camera, rotation }, centerX, centerY).y}
-                      stroke={defaultConfig.colors.grid}
+                      x1={project3DTo2D(-100, coord, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).x}
+                      y1={project3DTo2D(-100, coord, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).y}
+                      x2={project3DTo2D(100, coord, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).x}
+                      y2={project3DTo2D(100, coord, 0, { ...mergedConfig.camera, rotation }, centerX, centerY).y}
+                      stroke={mergedConfig.colors.grid}
                       strokeWidth={0.5}
                     />
                   </g>
@@ -235,7 +262,7 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
               <text
                 x={axis.endProj.x + 10}
                 y={axis.endProj.y}
-                fill={defaultConfig.colors.axes}
+                fill={mergedConfig.colors.axes}
                 fontSize="12"
                 fontWeight="bold"
               >
@@ -250,8 +277,8 @@ export const Scatter3D: React.FC<Scatter3DProps> = ({ data, config, theme, anima
               key={index}
               cx={point.projected.x}
               cy={point.projected.y}
-              r={(point.size || defaultConfig.pointSize) * point.projected.scale}
-              fill={point.color || defaultConfig.colors.points}
+              r={(point.size || mergedConfig.pointSize) * point.projected.scale}
+              fill={point.color || mergedConfig.colors.points}
               stroke="white"
               strokeWidth={1}
               opacity={Math.max(0.3, point.projected.scale)}
