@@ -1,16 +1,26 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { 
   LineChart, Line, BarChart, Bar, ScatterChart, Scatter, 
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, 
-  CartesianGrid, Tooltip, Legend 
+  CartesianGrid, Tooltip, Legend, AreaChart, Area,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ComposedChart
 } from 'recharts';
 import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import ChartSelector from './ChartSelector';
 
 const DashboardView: React.FC = () => {
   const { currentDataset } = useAppStore();
+  
+  // State for selected columns for each chart
+  const [lineChartColumns, setLineChartColumns] = useState<{primary: string, secondary: string}>({ primary: '', secondary: '' });
+  const [barChartColumns, setBarChartColumns] = useState<{primary: string, secondary: string}>({ primary: '', secondary: '' });
+  const [scatterChartColumns, setScatterChartColumns] = useState<{x: string, y: string}>({ x: '', y: '' });
+  const [areaChartColumn, setAreaChartColumn] = useState<string>('');
+  const [radarChartColumns, setRadarChartColumns] = useState<string[]>([]);
 
   const stats = useMemo(() => {
     if (!currentDataset) return [];
@@ -21,28 +31,28 @@ const DashboardView: React.FC = () => {
         value: `${currentDataset.dataQuality}%`,
         change: '+2.5%',
         icon: TrendingUp,
-        color: 'from-green-400 to-green-600'
+        color: 'from-primary/80 to-primary'
       },
       {
         title: 'Total Rows',
         value: currentDataset.rows.toLocaleString(),
         change: '+12%',
         icon: Users,
-        color: 'from-blue-400 to-blue-600'
+        color: 'from-secondary/80 to-secondary'
       },
       {
         title: 'Columns',
         value: currentDataset.columns.length.toString(),
         change: 'Stable',
         icon: Activity,
-        color: 'from-purple-400 to-purple-600'
+        color: 'from-accent to-accent'
       },
       {
         title: 'Missing Values',
         value: Math.round((100 - currentDataset.dataQuality) * currentDataset.rows / 100).toString(),
         change: '-5%',
         icon: DollarSign,
-        color: 'from-red-400 to-red-600'
+        color: 'from-destructive/80 to-destructive'
       }
     ];
   }, [currentDataset]);
@@ -50,7 +60,6 @@ const DashboardView: React.FC = () => {
   const chartData = useMemo(() => {
     if (!currentDataset || !currentDataset.data) return [];
     
-    // Sample the data for charts (take first 20 rows)
     return currentDataset.data.slice(0, 20).map((row, index) => ({
       index: index + 1,
       ...row
@@ -66,12 +75,32 @@ const DashboardView: React.FC = () => {
     });
   }, [currentDataset]);
 
-  const colors = ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ef4444'];
+  // Initialize default columns when dataset changes
+  React.useEffect(() => {
+    if (numericColumns.length > 0) {
+      setLineChartColumns({ 
+        primary: numericColumns[0] || '', 
+        secondary: numericColumns[1] || '' 
+      });
+      setBarChartColumns({ 
+        primary: numericColumns[0] || '', 
+        secondary: numericColumns[1] || '' 
+      });
+      setScatterChartColumns({ 
+        x: numericColumns[0] || '', 
+        y: numericColumns[1] || '' 
+      });
+      setAreaChartColumn(numericColumns[0] || '');
+      setRadarChartColumns(numericColumns.slice(0, 5));
+    }
+  }, [numericColumns]);
+
+  const colors = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
   if (!currentDataset) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-400">No dataset selected</p>
+        <p className="text-muted-foreground">No dataset selected</p>
       </div>
     );
   }
@@ -80,10 +109,10 @@ const DashboardView: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>
-        <p className="text-gray-400">
-          Analyzing: <span className="text-[#00d4ff]">{currentDataset.name}</span> • 
-          Domain: <span className="text-[#7c3aed] capitalize">{currentDataset.domain}</span> •
+        <h1 className="text-2xl font-bold text-foreground mb-2">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Analyzing: <span className="text-primary">{currentDataset.name}</span> • 
+          Domain: <span className="text-secondary capitalize">{currentDataset.domain}</span> •
           Confidence: <span className="text-green-400">{currentDataset.confidence}%</span>
         </p>
       </div>
@@ -98,7 +127,7 @@ const DashboardView: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a] hover:border-[#00d4ff]/30 transition-colors"
+              className="bg-card rounded-lg p-6 border border-border hover:border-primary/30 transition-colors"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
@@ -106,8 +135,8 @@ const DashboardView: React.FC = () => {
                 </div>
                 <span className="text-sm text-green-400">{stat.change}</span>
               </div>
-              <h3 className="text-gray-400 text-sm font-medium">{stat.title}</h3>
-              <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+              <h3 className="text-muted-foreground text-sm font-medium">{stat.title}</h3>
+              <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
             </motion.div>
           );
         })}
@@ -116,114 +145,245 @@ const DashboardView: React.FC = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Line Chart */}
-        {numericColumns.length >= 1 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Data Trends</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                <XAxis dataKey="index" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#2a2a2a', 
-                    border: '1px solid #3a3a3a',
-                    borderRadius: '8px'
-                  }} 
-                />
-                <Legend />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="bg-card rounded-lg p-6 border border-border"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4">Trend Analysis</h3>
+          <div className="space-y-2">
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={lineChartColumns.primary}
+              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
+              label="Primary"
+            />
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={lineChartColumns.secondary}
+              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, secondary: col }))}
+              label="Secondary"
+            />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} 
+              />
+              <Legend />
+              {lineChartColumns.primary && (
                 <Line 
                   type="monotone" 
-                  dataKey={numericColumns[0]} 
-                  stroke="#00d4ff" 
+                  dataKey={lineChartColumns.primary} 
+                  stroke="hsl(var(--primary))" 
                   strokeWidth={2}
-                  dot={{ fill: '#00d4ff', strokeWidth: 2 }}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
                 />
-                {numericColumns[1] && (
-                  <Line 
-                    type="monotone" 
-                    dataKey={numericColumns[1]} 
-                    stroke="#7c3aed" 
-                    strokeWidth={2}
-                    dot={{ fill: '#7c3aed', strokeWidth: 2 }}
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        )}
+              )}
+              {lineChartColumns.secondary && (
+                <Line 
+                  type="monotone" 
+                  dataKey={lineChartColumns.secondary} 
+                  stroke="hsl(var(--secondary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2 }}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </motion.div>
 
         {/* Bar Chart */}
-        {numericColumns.length >= 1 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Data Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                <XAxis dataKey="index" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#2a2a2a', 
-                    border: '1px solid #3a3a3a',
-                    borderRadius: '8px'
-                  }} 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          className="bg-card rounded-lg p-6 border border-border"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4">Distribution Analysis</h3>
+          <div className="space-y-2">
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={barChartColumns.primary}
+              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
+              label="Primary"
+            />
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={barChartColumns.secondary}
+              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, secondary: col }))}
+              label="Secondary"
+            />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} 
+              />
+              <Legend />
+              {barChartColumns.primary && (
+                <Bar dataKey={barChartColumns.primary} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              )}
+              {barChartColumns.secondary && (
+                <Bar dataKey={barChartColumns.secondary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
+
+        {/* Area Chart */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="bg-card rounded-lg p-6 border border-border"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4">Area Trend</h3>
+          <ChartSelector
+            columns={numericColumns}
+            selectedColumn={areaChartColumn}
+            onColumnChange={setAreaChartColumn}
+            label="Column"
+          />
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} 
+              />
+              {areaChartColumn && (
+                <Area 
+                  type="monotone" 
+                  dataKey={areaChartColumn} 
+                  stroke="hsl(var(--primary))" 
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.3}
                 />
-                <Legend />
-                <Bar dataKey={numericColumns[0]} fill="#00d4ff" radius={[4, 4, 0, 0]} />
-                {numericColumns[1] && (
-                  <Bar dataKey={numericColumns[1]} fill="#7c3aed" radius={[4, 4, 0, 0]} />
-                )}
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        )}
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        </motion.div>
 
         {/* Scatter Plot */}
-        {numericColumns.length >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Correlation Analysis</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <ScatterChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                <XAxis dataKey={numericColumns[0]} stroke="#666" />
-                <YAxis dataKey={numericColumns[1]} stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#2a2a2a', 
-                    border: '1px solid #3a3a3a',
-                    borderRadius: '8px'
-                  }} 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5 }}
+          className="bg-card rounded-lg p-6 border border-border"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4">Correlation Analysis</h3>
+          <div className="space-y-2">
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={scatterChartColumns.x}
+              onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, x: col }))}
+              label="X-Axis"
+            />
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={scatterChartColumns.y}
+              onColumnChange={(col) => setScatterChartColumns(prev => ({ ...prev, y: col }))}
+              label="Y-Axis"
+            />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ScatterChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey={scatterChartColumns.x} stroke="hsl(var(--muted-foreground))" />
+              <YAxis dataKey={scatterChartColumns.y} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} 
+              />
+              {scatterChartColumns.x && scatterChartColumns.y && (
+                <Scatter dataKey={scatterChartColumns.y} fill="hsl(var(--primary))" />
+              )}
+            </ScatterChart>
+          </ResponsiveContainer>
+        </motion.div>
+
+        {/* Composed Chart */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6 }}
+          className="bg-card rounded-lg p-6 border border-border"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4">Combined Analysis</h3>
+          <div className="space-y-2">
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={lineChartColumns.primary}
+              onColumnChange={(col) => setLineChartColumns(prev => ({ ...prev, primary: col }))}
+              label="Line Data"
+            />
+            <ChartSelector
+              columns={numericColumns}
+              selectedColumn={barChartColumns.primary}
+              onColumnChange={(col) => setBarChartColumns(prev => ({ ...prev, primary: col }))}
+              label="Bar Data"
+            />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="index" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} 
+              />
+              <Legend />
+              {barChartColumns.primary && (
+                <Bar dataKey={barChartColumns.primary} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+              )}
+              {lineChartColumns.primary && (
+                <Line 
+                  type="monotone" 
+                  dataKey={lineChartColumns.primary} 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
                 />
-                <Scatter dataKey={numericColumns[1]} fill="#10b981" />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </motion.div>
-        )}
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </motion.div>
 
         {/* Pie Chart */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]"
+          transition={{ delay: 0.7 }}
+          className="bg-card rounded-lg p-6 border border-border"
         >
-          <h3 className="text-lg font-semibold text-white mb-4">Data Quality Breakdown</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Data Quality Breakdown</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -237,13 +397,13 @@ const DashboardView: React.FC = () => {
                 dataKey="value"
                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
               >
-                <Cell fill="#10b981" />
-                <Cell fill="#ef4444" />
+                <Cell fill="hsl(var(--primary))" />
+                <Cell fill="hsl(var(--destructive))" />
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#2a2a2a', 
-                  border: '1px solid #3a3a3a',
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '8px'
                 }} 
               />
@@ -256,15 +416,15 @@ const DashboardView: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]"
+        transition={{ delay: 0.8 }}
+        className="bg-card rounded-lg p-6 border border-border"
       >
-        <h3 className="text-lg font-semibold text-white mb-4">Detected Features</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Detected Features</h3>
         <div className="flex flex-wrap gap-2">
           {currentDataset.detectedFeatures.map((feature, index) => (
             <span 
               key={index}
-              className="px-3 py-1 bg-[#00d4ff]/20 text-[#00d4ff] rounded-full text-sm border border-[#00d4ff]/30"
+              className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30"
             >
               {feature}
             </span>
