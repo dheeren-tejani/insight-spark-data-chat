@@ -10,7 +10,7 @@ import { ChartRecommendationEngine } from './Intelligence/ChartRecommendationEng
 
 export interface ChartConfig {
   type: string;
-  data: any[];
+  data: any;
   config: any;
   theme?: ChartTheme;
   animation?: AnimationConfig;

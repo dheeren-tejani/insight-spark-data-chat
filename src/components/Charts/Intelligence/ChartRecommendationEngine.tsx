@@ -1,7 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, BarChart3, Scatter3, PieChart, Activity, Network } from 'lucide-react';
+import { TrendingUp, BarChart3, Scatter, PieChart, Activity, Network } from 'lucide-react';
 
 interface ChartRecommendation {
   type: string;
@@ -157,7 +156,7 @@ const generateRecommendations = (characteristics: DataCharacteristics): ChartRec
       reasoning: strongCorrelation 
         ? `Strong correlation detected (${strongCorrelation.correlation.toFixed(2)}) between variables`
         : 'Explore relationships between numeric variables',
-      icon: Scatter3,
+      icon: Scatter,
       config: {
         xAxis: characteristics.numericColumns[0],
         yAxis: characteristics.numericColumns[1],

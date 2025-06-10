@@ -8,7 +8,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ComposedChart
 } from 'recharts';
-import { TrendingUp, Users, DollarSign, Activity, BarChart3, Scatter3 } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Activity, BarChart3, Scatter as ScatterIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import ChartSelector from './ChartSelector';
 import AdvancedChartsView from './AdvancedChartsView';
@@ -151,7 +151,7 @@ const DashboardView: React.FC = () => {
             <span>Basic Charts</span>
           </TabsTrigger>
           <TabsTrigger value="advanced" className="flex items-center space-x-2">
-            <Scatter3 className="w-4 h-4" />
+            <ScatterIcon className="w-4 h-4" />
             <span>Advanced Charts</span>
           </TabsTrigger>
         </TabsList>

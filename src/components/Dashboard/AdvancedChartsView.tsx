@@ -156,6 +156,16 @@ const AdvancedChartsView: React.FC = () => {
     }
   }, [currentDataset, selectedChartType, selectedColumns]);
 
+  const getDataLength = (data: any): number => {
+    if (Array.isArray(data)) {
+      return data.length;
+    }
+    if (data && typeof data === 'object' && 'nodes' in data) {
+      return data.nodes.length;
+    }
+    return 0;
+  };
+
   const handleRecommendationSelect = (recommendation: any) => {
     setSelectedChartType(recommendation.type);
     setChartConfig(recommendation.config);
@@ -349,17 +359,17 @@ const AdvancedChartsView: React.FC = () => {
               {chartTypes.find(t => t.value === selectedChartType)?.label || 'Chart'}
             </CardTitle>
             <CardDescription>
-              Interactive visualization with {processedData.length || 0} data points
+              Interactive visualization with {getDataLength(processedData)} data points
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-96">
-              {processedData.length > 0 ? (
+              {getDataLength(processedData) > 0 ? (
                 <ChartFactory
                   type={selectedChartType}
                   data={processedData}
                   config={{}}
-                  animation={{ duration: 800, easing: 'easeInOutCubic' }}
+                  animation={{ duration: 800, easing: 'easeInOut' }}
                   interaction={{
                     hover: { enabled: true, highlight: 'item' },
                     selection: { enabled: true, mode: 'single' },
